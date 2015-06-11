@@ -1,0 +1,53 @@
+﻿<Window x:Class="NetHelper.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AboutWindow" Height="307" Width="546" SizeToContent="WidthAndHeight" ResizeMode="NoResize">
+    <StackPanel>
+            <TextBlock TextWrapping="Wrap">
+                版本：2.0
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap">
+                作者：段聪，邮箱：
+                <Hyperlink RequestNavigate="Hyperlink_RequestNavigate" NavigateUri="mailto:dc@duancong.biz?subject=[数据包生成捕获软件]反馈">dc@duancong.biz</Hyperlink>
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Text="------------------------------------"/>
+            <TextBlock TextWrapping="Wrap">
+                已完成功能：
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap">
+                以太网数据包生成和发送
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap">
+                以太网数据包捕获和分析
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap">
+                    以太网数据包16进制编辑
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap">
+                    导入导出导出数据包
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap">
+                    未完成功能：
+            </TextBlock>            
+            <TextBlock TextWrapping="Wrap">
+                暂无，欢迎反馈
+            </TextBlock>
+        <TextBlock TextWrapping="Wrap" Text="------------------------------------"/>
+            <TextBlock TextWrapping="Wrap">
+                源码支持：<Hyperlink RequestNavigate="Hyperlink_RequestNavigate" NavigateUri="http://sourceforge.net/apps/mediawiki/sharppcap/index.php?title=Main_Page">SharpPcap</Hyperlink>
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Text="------------------------------------"/>
+            <TextBlock TextWrapping="Wrap">
+                过滤器格式参考：
+            </TextBlock>            
+            <TextBlock TextWrapping="Wrap">                 
+                英文：<Hyperlink RequestNavigate="Hyperlink_RequestNavigate" NavigateUri="http://www.winpcap.org/docs/docs_412/html/group__language.html">www.winpcap.org/docs/docs_412/html/group__language.html</Hyperlink>                
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap">
+                中文：<Hyperlink RequestNavigate="Hyperlink_RequestNavigate" NavigateUri="http://www.ferrisxu.com/WinPcap/html/group__language.html">www.ferrisxu.com/WinPcap/html/group__language.html</Hyperlink>
+            </TextBlock>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+            <Button Content="确定" Padding="10,5,10,5" Click="Button_Click" />
+        </StackPanel>            
+    </StackPanel>        
+</Window>

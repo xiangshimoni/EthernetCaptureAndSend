@@ -1,0 +1,211 @@
+﻿<Window x:Class="NetHelper.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:NetHelper"
+        xmlns:hex="clr-namespace:Be.Windows.Forms;assembly=Be.Windows.Forms.HexBox"
+        Title="以太网数据包发送/捕获器" Height="603" Width="850"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
+    <Window.Resources>
+        <local:MACAddrConverter x:Key="MACAddrConverter"/>
+        <local:IPAddrConverter x:Key="IPAddrConverter"/>
+    </Window.Resources>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="文件">
+                <MenuItem Header="导入pkt文件到发送列表" Click="loadPktMenuItem_Click"/>
+                <!--<MenuItem Header="导出excel"/>-->
+                <MenuItem Header="导出发送列表到pkt文件" Click="exportSendPktMenuItem_Click"/>
+                <MenuItem Header="导出捕获列表到pkt文件" Click="exportCapturePktMenuItem_Click"/>
+                <MenuItem Header="关闭" Click="CloseMenuItem_Click"/>
+            </MenuItem>
+            <MenuItem Header="工具">
+                <MenuItem Header="创建以太网帧"/>
+                <MenuItem Header="打开发送网卡"/>
+                <MenuItem Header="打开捕获网卡"/>
+            </MenuItem>
+            <MenuItem Header="帮助">
+                <MenuItem Header="关于" Click="AboutMenuItem_Click"/>
+            </MenuItem>
+        </Menu>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="状态：            "/>
+                <TextBlock Text="进度："/>
+                <ProgressBar Name="progressBar" 
+                             Minimum="0"
+                             Maximum="100"
+                             Value="{Binding ProgressValue}" Width="250" Margin="0,0,5,0"/>
+                <TextBlock Text="{Binding ProgressValue}"/>
+                <TextBlock Text="%"/>
+            </StackPanel>
+        </StatusBar>
+        <Grid>
+            <Grid DockPanel.Dock="Bottom" Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Margin="10">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                        <Button Content="清空发送列表" Margin="0,0,10,0" Click="sendListClearButton_Click" />
+                        <Button Content="创建以太网帧" Margin="0,0,10,0" Click="Button_Click" />
+                        <Button Content="发送全部" Margin="0,0,10,0" Name="SendBtn" Click="SendBtn_Click" />
+                        <Button Content="发送选中包" Margin="0,0,10,0" Name="SendSelectedBtn" Click="SendSelectedBtn_Click" />
+                        <CheckBox Name="isSendForeverSetCheckBox" Margin="0,0,10,0"  VerticalAlignment="Center" Checked="isSendForeverSetCheckBox_Checked" Unchecked="isSendForeverSetCheckBox_Unchecked">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="循环发送"/>
+                                <local:NumbersOnlyTextBox x:Name="sendtimesTextBox" AllowNegativeNumbers="False" Width="60" Text="10" HorizontalContentAlignment="Center"/>
+                                <TextBlock Text="次"/>
+                            </StackPanel>
+                        </CheckBox>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="时间间隔" VerticalAlignment="Center"/>
+                            <local:NumbersOnlyTextBox AllowNegativeNumbers="False" Width="50" Text="{Binding TimeInterval}" HorizontalContentAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock Text="ms" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ToggleButton Content="打开发送网卡"  Name="OpenCloseSendDeviceBtn" Margin="0,0,10,0" Checked="OpenCloseSendDeviceBtn_Checked" Unchecked="OpenCloseSendDeviceBtn_Unchecked"/>
+                        <ComboBox SelectionChanged="sendDevicesComboBox_SelectionChanged" Name="sendDevicesComboBox" SelectedIndex="0" ItemsSource="{Binding Devices}" Height="25"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Content="清空捕获列表" Margin="0,0,10,0" Click="captureListClearButton_Click"/>
+                        <TextBlock Text="过滤器：" VerticalAlignment="Center"/>
+                        <ComboBox IsEditable="True" Width="215" Name="filterTextBox" SelectedIndex="0" VerticalAlignment="Center">
+                            <ComboBox.Items>
+                                <ComboBoxItem Content="ip and tcp"/>
+                                <ComboBoxItem Content="src host 192.168.1.1"/>
+                                <ComboBoxItem Content="dst host 192.168.1.2"/>
+                            </ComboBox.Items>
+                        </ComboBox>
+                        <Button Name="applyFilterBtn" Content="应用表达式" Click="applyFilterBtn_Click" />
+                        <ToggleButton Content="打开捕获网卡"  Name="OpenCloseCaptureDeviceBtn" Margin="10,0,10,0" Checked="OpenCloseCaptureDeviceBtn_Checked" Unchecked="OpenCloseCaptureDeviceBtn_Unchecked"/>
+                        <ComboBox Name="captureDevicesComboBox" SelectedIndex="0" ItemsSource="{Binding Devices}" Height="25" SelectionChanged="captureDevicesComboBox_SelectionChanged" />
+                        <TextBlock Text="高亮显示过滤：" Margin="10,0,0,0" VerticalAlignment="Center"/>                        
+                        <ComboBox IsEditable="True" Width="150" Name="highlightFilterTextBox" SelectedIndex="0" VerticalAlignment="Center">
+                            <ComboBox.Items>
+                                <ComboBoxItem Content="src host 192.168.1.1"/>
+                                <ComboBoxItem Content="dst host 192.168.1.2"/>
+                            </ComboBox.Items>
+                        </ComboBox>
+                    </StackPanel>
+                </StackPanel>
+                <GridSplitter Height="5" Background="LightGray" Grid.Row="1" 
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Bottom"/>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <GroupBox Header="发送数据包列表" Grid.Column="0" Margin="0,0,5,0">
+                        <DataGrid Name="sendPacketsDataGrid"     
+                                   GotFocus="sendPacketsDataGrid_GotFocus"
+                                    SelectionChanged="sendPacketsDataGrid_SelectionChanged"
+                                    Grid.Row="1" Margin="0,0,0,5" 
+                                    ItemsSource="{Binding SendEthernetPacketList}"
+                                    AutoGenerateColumns="False"
+                                    LoadingRow="sendPacketsDataGrid_LoadingRow"                                    
+                                    CanUserAddRows="False">
+                            <DataGrid.Columns>                                
+                                <DataGridTextColumn Header="协议" Binding="{Binding Type}"/>
+                                <DataGridTextColumn Header="源MAC地址" Binding="{Binding SourceHwAddress,Converter={StaticResource MACAddrConverter}}"/>
+                                <DataGridTextColumn Header="目的MAC地址" Binding="{Binding DestinationHwAddress,Converter={StaticResource MACAddrConverter}}"/>
+                                <DataGridTextColumn Header="源IP地址" Binding="{Binding SourceIpAddress,Converter={StaticResource IPAddrConverter}}"/>
+                                <DataGridTextColumn Header="目的IP地址" Binding="{Binding DestinationIpAddress,Converter={StaticResource IPAddrConverter}}"/>
+                                <DataGridTextColumn Header="大小" IsReadOnly="True" Binding="{Binding Length}"/>
+                                <DataGridTextColumn Header="摘要" IsReadOnly="True" Binding="{Binding Intro}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                    <GridSplitter Width="5" Background="LightGray"/>
+                    <GroupBox Header="捕获数据包列表" Grid.Column="3">
+                        <DataGrid  Name="capturePacketsDataGrid"
+                                   GotFocus="capturePacketsDataGrid_GotFocus"
+                                    SelectionChanged="capturePacketsDataGrid_SelectionChanged"
+                                    Grid.Row="1" Margin="0,0,0,5" 
+                                    ItemsSource="{Binding CaptureEthernetPacketList}"
+                                    AutoGenerateColumns="False"
+                                    LoadingRow="sendPacketsDataGrid_LoadingRow"
+                                    CanUserAddRows="False">
+                            <DataGrid.Columns>                                
+                                <DataGridTextColumn Header="到达时间" IsReadOnly="True" Binding="{Binding Timeval}"/>
+                                <DataGridTextColumn Header="协议" IsReadOnly="True" Binding="{Binding Type}"/>
+                                <DataGridTextColumn Header="源MAC地址" Binding="{Binding SourceHwAddress,Converter={StaticResource MACAddrConverter}}"/>
+                                <DataGridTextColumn Header="目的MAC地址" Binding="{Binding DestinationHwAddress,Converter={StaticResource MACAddrConverter}}"/>
+                                <!--<DataGridTextColumn Header="源IP地址" Binding="{Binding SourceIpAddress,Converter={StaticResource IPAddrConverter}}"/>-->
+                                <DataGridTemplateColumn IsReadOnly="True" Header="源IP地址">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding SourceIpAddress,Converter={StaticResource IPAddrConverter}}" 
+                                                        Background="{Binding ConclusionColor}">                                                    
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="目的IP地址" Binding="{Binding DestinationIpAddress,Converter={StaticResource IPAddrConverter}}"/>
+                                <DataGridTextColumn Header="大小" IsReadOnly="True" Binding="{Binding Length}"/>
+                                <DataGridTextColumn Header="摘要" IsReadOnly="True" Binding="{Binding Intro}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                </Grid>
+                <GridSplitter Height="5" Background="LightGray" Grid.Row="2" 
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Bottom"/>
+                <GroupBox Grid.Row="2" Header="解码信息">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto">
+                        <TextBox Text="{Binding PacketInfo}"/>
+                    </ScrollViewer>
+                </GroupBox>
+                <GroupBox Grid.Row="3" Header="十六进制编辑器">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+                        <WindowsFormsHost Grid.Column="0">
+                            <hex:HexBox x:Name="hexBox" 
+                                    LineInfoVisible="True"
+                                    StringViewVisible="True"
+                                    VScrollBarVisible="True"
+                                    AllowDrop="True"
+                                    UseFixedBytesPerLine ="True"
+                                    HexCasing="Lower"
+                                    BytesPerLine="32"
+                                    />
+                        </WindowsFormsHost>
+                        <StackPanel Grid.Column="1">
+                            <Button Content="提交更改" Height="30" Click="commitHexEdit_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+                <GroupBox Grid.Row="3" Visibility="Collapsed" Header="16进制编辑">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Auto"
+                                      Margin="0,0,5,0">
+                            <local:HexaGrid x:Name="hexDataGrid" 
+                                            CellEditEnding="hexDataGrid_CellEditEnding"
+                                            SelectionChanged="hexDataGrid_SelectionChanged"
+                                            />
+                        </ScrollViewer>
+                        <GridSplitter Width="5" Grid.Column="0" HorizontalAlignment="Right" Background="LightGray"/>
+                        <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Auto">
+                            <TextBox TextWrapping="Wrap" Name="hexStrTextBox" Text="{Binding ASCIIString,ElementName=hexDataGrid}"/>
+                        </ScrollViewer>                      
+                    </Grid>
+                </GroupBox>
+            </Grid>
+        </Grid>        
+    </DockPanel>
+</Window>
+
+    
